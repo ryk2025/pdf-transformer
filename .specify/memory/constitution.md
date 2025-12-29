@@ -1,50 +1,118 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+<!--
+Sync Impact Report:
+- Version change: 1.0.0 → 1.0.1
+- List of modified principles: None (clarifications only)
+- Added sections: プロジェクト概要
+- Removed sections: None
+- Modified sections: 範囲（技術スタック情報追加）
+- Templates requiring updates: 
+  - plan-template.md (✅ no changes needed - already aligned)
+  - spec-template.md (✅ no changes needed - already aligned)
+  - tasks-template.md (✅ no changes needed - already aligned)
+- Follow-up TODOs: None
+- Change type: PATCH (clarifications and minor additions only)
+-->
+# PDF Transformer プロジェクト憲章
 
-## Core Principles
+## プロジェクト概要
+PDF Transformerは、PDFファイルの変換・処理を行うための高性能なツールです。
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+## 目的
+PDF Transformerプロジェクトの開発における基本的な原則とガバナンスを定義します。
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+## 範囲
+この憲章は、PDF Transformerプロジェクトのすべての開発活動に適用されます。
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+**対象リポジトリ**: https://github.com/ryk2025/pdf-transformer  
+## 原則
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+### I. コード品質基準（Clean and Short Code）
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+**原則**: コードはクリーンで可能な限り短く保ち、不要な複雑さを避けて中核機能に集中すること。
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+**実施要件**:
+- コードの可読性と保守性を最優先すること
+- 冗長なコードや未使用のコードを排除すること
+- 複雑なワークフローは適切なコメントで説明すること
+- コードレビューでは、この基準への準拠を必ず確認すること
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+**根拠**: シンプルなコードは理解しやすく、バグが少なく、保守が容易です。スプリント開発においては、迅速な変更と高品質の両立が不可欠です。
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+---
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+### II. テスト標準（Sprint Development）
 
-## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
+**原則**: 迅速なスプリント開発を可能にするため、この段階のテストは統合テストに限定すること。
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+**実施要件**:
+- 統合テストのみを実装対象とすること
+- ユニットテストは必須ではありません
+- テストの作成は機能実装の妨げにならない範囲で行うこと
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+**根拠**: スプリント開発フェーズでは、速度と機能の実現を優先します。統合テストにより、システム全体の動作を確認しながら、開発速度を維持します。
+
+---
+
+### III. 依存関係の選択（Popular Dependencies）
+
+**原則**: 必要最小限の、広く使用されている依存関係を使用すること。
+
+**実施要件**:
+- 依存関係は必要最小限に抑えること
+- コミュニティのサポートとメンテナンス状況を考慮すること
+- 週次ダウンロード数が多く、活発にメンテナンスされているライブラリを優先すること
+- 大規模なエコシステムを持つライブラリを選択すること
+
+**根拠**: 人気のある依存関係は、セキュリティアップデートが迅速で、問題解決のためのコミュニティサポートが充実しています。
+
+---
+
+### IV. モダンな実装（Modern Implementation）
+
+**原則**: 最新の依存関係マネージャーとフレームワークを使用すること。
+
+**実施要件**:
+- 最新の言語バージョンとツールチェーンを採用すること
+- モダンなベストプラクティスに従うこと
+- 非推奨の機能やライブラリは避けること
+
+**根拠**: モダンなツールは、生産性、セキュリティ、パフォーマンスの面で優れています。
+
+---
+
+### V. セキュリティの確保（High Security）
+
+**原則**: 展開時の情報漏洩を防ぐために高いセキュリティを確保すること。
+
+**実施要件**:
+- セキュリティチェックを必須とすること
+- 潜在的な脆弱性を積極的に監視し、対処すること
+- セキュリティベストプラクティスに従うこと
+- 依存関係の定期的なセキュリティアップデートを行うこと
+- ログに個人情報や機密情報を出力しないこと
+
+**根拠**: セキュリティ侵害は、ユーザーの信頼を失い、プロジェクトの評判を損なう可能性があります。予防的なセキュリティ対策が不可欠です。
+
+## ガバナンス
+
+### 憲章の優先順位
+本憲章は他のすべての開発慣行に優先します。
+
+### 改訂プロセス
+憲章の改訂には以下が必要です：
+- 変更内容の明確なドキュメント化
+- 適切な承認プロセス
+- 影響を受ける部分の移行計画
+
+### 準拠要件
+- すべてのプルリクエストおよびコードレビューは、本憲章への準拠を確認しなければなりません
+- 複雑性の導入は、明確な正当化が必要です
+- 本憲章の原則に反する変更は、承認されません
+
+### バージョン管理ポリシー
+憲章のバージョンは以下のルールに従います：
+- **MAJOR（X.0.0）**: 後方互換性のない変更、原則の削除または再定義
+- **MINOR（x.Y.0）**: 新しい原則・セクションの追加、または実質的な拡張
+- **PATCH（x.y.Z）**: 明確化、文言修正、タイポ修正、非意味的な改良
+
+**Version**: 1.0.1 | **Ratified**: 2025-12-22 | **Last Amended**: 2025-12-29
