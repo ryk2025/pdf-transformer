@@ -1,0 +1,204 @@
+openapi: 3.0.3
+info:
+  title: PDF Transformer API
+  description: |
+    Excel ファイルを PDF 形式に変換する REST API サービス。
+    
+    このサービスは、.xlsx および .xls 形式の Excel ファイルをアップロードし、
+    表構造とコンテンツを保持した PDF ファイルを生成して返します。
+    
+    ## 機能
+    - Excel (.xlsx, .xls) から PDF への変換
+    - 複数シートのサポート
+    - 表構造と書式の保持
+    - ファイル検証とエラーハンドリング
+    
+    ## 制限
+    - 最大ファイルサイズ: 10MB
+    - サポート形式: .xlsx, .xls のみ
+    - 処理時間: 標準ファイル（5MB未満、10シート未満）で30秒以内
+  version: 0.1.0
+  contact:
+    name: PDF Transformer
+    url: https://github.com/ryk2025/pdf-transformer
+
+servers:
+  - url: http://localhost:8000
+    description: ローカル開発環境
+  - url: https://api.pdf-transformer.example.com
+    description: 本番環境（将来）
+
+tags:
+  - name: conversion
+    description: ファイル変換操作
+
+paths:
+  /convert:
+    post:
+      tags:
+        - conversion
+      summary: Excel ファイルを PDF に変換
+      description: |
+        アップロードされた Excel ファイル（.xlsx または .xls）を PDF 形式に変換します。
+        
+        変換プロセス：
+        1. ファイル形式とサイズの検証
+        2. Excel ファイルの解析
+        3. 表構造と書式の抽出
+        4. PDF への変換
+        5. PDF ファイルの返却
+        
+        **注意事項**：
+        - 複数シートを含む Excel ファイルは、すべてのシートが PDF に含まれます
+        - 数式は計算値として変換されます
+        - マクロや VBA コードは含まれません
+      operationId: convertExcelToPdf
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: |
+                    アップロードする Excel ファイル
+                    - サポート形式: .xlsx, .xls
+                    - 最大サイズ: 10MB
+            encoding:
+              file:
+                contentType: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel
+      responses:
+        '200':
+          description: 変換成功 - PDF ファイルを返却
+          headers:
+            Content-Disposition:
+              description: ダウンロードするファイル名
+              schema:
+                type: string
+                example: attachment; filename="document.pdf"
+            Content-Length:
+              description: PDF ファイルのサイズ（バイト）
+              schema:
+                type: integer
+                example: 524288
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+                description: 生成された PDF ファイル（バイナリデータ）
+        '400':
+          description: 不正なリクエスト - ファイル形式が無効、またはファイルが破損
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidFormat:
+                  summary: 無効なファイル形式
+                  value:
+                    error_type: INVALID_FILE_FORMAT
+                    message: サポートされていないファイル形式です。.xlsx または .xls ファイルをアップロードしてください。
+                    status_code: 400
+                corruptedFile:
+                  summary: 破損したファイル
+                  value:
+                    error_type: CORRUPTED_FILE
+                    message: ファイルが破損しているか、読み取れません。有効な Excel ファイルをアップロードしてください。
+                    status_code: 400
+        '413':
+          description: ファイルサイズ超過 - 10MB を超えるファイル
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error_type: FILE_TOO_LARGE
+                message: ファイルサイズが制限（10MB）を超えています。より小さいファイルをアップロードしてください。
+                status_code: 413
+        '422':
+          description: 処理不可 - 変換処理中にエラーが発生
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error_type: CONVERSION_FAILED
+                message: ファイルの変換中にエラーが発生しました。ファイルの内容を確認してください。
+                status_code: 422
+        '500':
+          description: サーバーエラー - 内部エラーが発生
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error_type: INTERNAL_ERROR
+                message: サーバーで内部エラーが発生しました。しばらくしてから再度お試しください。
+                status_code: 500
+
+  /health:
+    get:
+      tags:
+        - monitoring
+      summary: ヘルスチェック
+      description: API サーバーの稼働状態を確認します
+      operationId: healthCheck
+      responses:
+        '200':
+          description: サーバーは正常に動作しています
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 0.1.0
+
+components:
+  schemas:
+    ErrorResponse:
+      type: object
+      required:
+        - error_type
+        - message
+        - status_code
+      properties:
+        error_type:
+          type: string
+          description: エラーの種類を示す識別子
+          enum:
+            - INVALID_FILE_FORMAT
+            - FILE_TOO_LARGE
+            - CORRUPTED_FILE
+            - CONVERSION_FAILED
+            - INTERNAL_ERROR
+          example: INVALID_FILE_FORMAT
+        message:
+          type: string
+          description: ユーザー向けのエラーメッセージ
+          example: サポートされていないファイル形式です。.xlsx または .xls ファイルをアップロードしてください。
+        detail:
+          type: string
+          description: 詳細なエラー情報（デバッグ用、本番環境では省略される場合があります）
+          example: "File extension '.txt' is not allowed"
+        status_code:
+          type: integer
+          description: HTTP ステータスコード
+          example: 400
+
+  securitySchemes: {}
+    # 認証は Phase 1 では実装しない
+    # 将来的に API キーや OAuth を追加予定
+
+security: []
+  # Phase 1 では認証なし
