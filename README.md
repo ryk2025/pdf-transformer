@@ -53,7 +53,7 @@ pip install -e ".[dev]"
 ### サーバー起動
 
 ```bash
-uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
+uv run uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 ### API リクエスト例

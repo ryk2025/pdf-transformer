@@ -30,9 +30,9 @@
 
 **目的**: プロジェクト初期化と基本構造
 
-- [ ] T001 plan.md に従ってプロジェクト構造を作成（src/, tests/, pyproject.toml, README.md, .gitignore）
-- [ ] T002 Python プロジェクトを依存関係とともに初期化（FastAPI, openpyxl, xlrd, reportlab, python-magic, python-multipart, uvicorn, pytest）
-- [ ] T003 [P] mypy 設定と型ヒント方針を pyproject.toml と README.md に追加
+- [X] T001 plan.md に従ってプロジェクト構造を作成（src/, tests/, pyproject.toml, README.md, .gitignore）
+- [X] T002 Python プロジェクトを依存関係とともに初期化（FastAPI, openpyxl, xlrd, reportlab, python-magic, python-multipart, uvicorn, pytest）
+- [X] T003 [P] mypy 設定と型ヒント方針を pyproject.toml と README.md に追加
 
 ---
 
@@ -42,12 +42,12 @@
 
 **⚠️ 重要**: このフェーズが完了するまで、ユーザーストーリーの作業を開始できません
 
-- [ ] T004 データモデルの基底クラスと共通型を src/models/__init__.py に作成（型ヒント付き）
-- [ ] T005 [P] src/services/converter/ と src/services/storage/ ディレクトリ構造を作成
-- [ ] T006 [P] src/api/ にルーターとミドルウェア構造をセットアップ
-- [ ] T007 [P] src/lib/ にファイル検証ユーティリティの基盤を作成
-- [ ] T008 環境設定管理を src/config.py に設定（ファイルサイズ制限、許可された拡張子）
-- [ ] T009 エラーハンドリングとロギングインフラを src/lib/errors.py と src/lib/logging.py に設定
+- [X] T004 データモデルの基底クラスと共通型を src/models/__init__.py に作成（型ヒント付き）
+- [X] T005 [P] src/services/converter/ と src/services/storage/ ディレクトリ構造を作成
+- [X] T006 [P] src/api/ にルーターとミドルウェア構造をセットアップ
+- [X] T007 [P] src/lib/ にファイル検証ユーティリティの基盤を作成
+- [X] T008 環境設定管理を src/config.py に設定（ファイルサイズ制限、許可された拡張子）
+- [X] T009 エラーハンドリングとロギングインフラを src/lib/errors.py と src/lib/logging.py に設定
 
 **チェックポイント**: 基盤準備完了 - ユーザーストーリーの実装を並列で開始可能
 
@@ -63,24 +63,24 @@
 
 > **注意: これらのテストを最初に作成し、実装前に失敗することを確認してください**
 
-- [ ] T010 [P] [US1] /convert エンドポイントの統合テスト（正常系）を tests/integration/test_convert_success.py に作成
-- [ ] T011 [P] [US1] 複数シートファイルの統合テストを tests/integration/test_multisheet.py に作成
+- [X] T010 [P] [US1] /convert エンドポイントの統合テスト（正常系）を tests/integration/test_convert_success.py に作成
+- [X] T011 [P] [US1] 複数シートファイルの統合テストを tests/integration/test_multisheet.py に作成
 
 ### ユーザーストーリー 1 の実装
 
-- [ ] T012 [P] [US1] ConversionRequest と ConversionResponse モデルを src/models/conversion.py に作成（Pydantic、型ヒント付き）
-- [ ] T013 [P] [US1] ExcelWorkbook、ExcelSheet、ExcelCell モデルを src/models/excel.py に作成（型ヒント付き）
-- [ ] T014 [P] [US1] PDFDocument と PDFPage モデルを src/models/pdf.py に作成（型ヒント付き）
-- [ ] T015 [US1] Excel ファイル検証ロジック（拡張子、MIME、magic number、サイズ）を src/lib/validation.py に実装（T012 に依存）
-- [ ] T016 [US1] 一時ファイル処理（安全な作成、クリーンアップ）を src/services/storage/temp_storage.py に実装（型ヒント付き）
-- [ ] T017 [US1] Excel 解析サービス（openpyxl for .xlsx, xlrd for .xls）を src/services/converter/excel_parser.py に実装（T013 に依存、型ヒント付き）
-- [ ] T018 [US1] PDF 生成サービス（ReportLab、Table、Platypus）を src/services/converter/pdf_generator.py に実装（T014 に依存、型ヒント付き）
-- [ ] T019 [US1] 変換サービスオーケストレーター（検証→解析→生成）を src/services/converter/conversion_service.py に実装（T015-T018 に依存、型ヒント付き）
-- [ ] T020 [US1] /convert POST エンドポイントを src/api/routes/convert.py に実装（T019 に依存、型ヒント付き）
-- [ ] T021 [US1] FastAPI アプリケーションエントリポイントを src/main.py に実装（すべてのルートを含む、型ヒント付き）
-- [ ] T022 [US1] 複数シートサポート（各シートを PDF ページとして）を src/services/converter/excel_parser.py と pdf_generator.py に追加
-- [ ] T023 [US1] 基本的な書式設定保持（罫線、配置、フォント）を src/services/converter/pdf_generator.py に実装
-- [ ] T024 [US1] ユーザーストーリー 1 のすべてのコードに mypy 型チェックを実行し、型エラーを修正
+- [X] T012 [P] [US1] ConversionRequest と ConversionResponse モデルを src/models/conversion.py に作成（Pydantic、型ヒント付き）
+- [X] T013 [P] [US1] ExcelWorkbook、ExcelSheet、ExcelCell モデルを src/models/excel.py に作成（型ヒント付き）
+- [X] T014 [P] [US1] PDFDocument と PDFPage モデルを src/models/pdf.py に作成（型ヒント付き）
+- [X] T015 [US1] Excel ファイル検証ロジック（拡張子、MIME、magic number、サイズ）を src/lib/validation.py に実装（T012 に依存）
+- [X] T016 [US1] 一時ファイル処理（安全な作成、クリーンアップ）を src/services/storage/temp_storage.py に実装（型ヒント付き）
+- [X] T017 [US1] Excel 解析サービス（openpyxl for .xlsx, xlrd for .xls）を src/services/converter/excel_parser.py に実装（T013 に依存、型ヒント付き）
+- [X] T018 [US1] PDF 生成サービス（ReportLab、Table、Platypus）を src/services/converter/pdf_generator.py に実装（T014 に依存、型ヒント付き）
+- [X] T019 [US1] 変換サービスオーケストレーター（検証→解析→生成）を src/services/converter/conversion_service.py に実装（T015-T018 に依存、型ヒント付き）
+- [X] T020 [US1] /convert POST エンドポイントを src/api/routes/convert.py に実装（T019 に依存、型ヒント付き）
+- [X] T021 [US1] FastAPI アプリケーションエントリポイントを src/main.py に実装（すべてのルートを含む、型ヒント付き）
+- [X] T022 [US1] 複数シートサポート（各シートを PDF ページとして）を src/services/converter/excel_parser.py と pdf_generator.py に追加
+- [X] T023 [US1] 基本的な書式設定保持（罫線、配置、フォント）を src/services/converter/pdf_generator.py に実装
+- [X] T024 [US1] ユーザーストーリー 1 のすべてのコードに mypy 型チェックを実行し、型エラーを修正
 
 **チェックポイント**: この時点で、ユーザーストーリー 1 は完全に機能し、独立してテスト可能であるべきです
 
@@ -94,20 +94,20 @@
 
 ### ユーザーストーリー 2 のテスト
 
-- [ ] T025 [P] [US2] 無効なファイル形式のエラー処理テストを tests/integration/test_error_invalid_format.py に作成
-- [ ] T026 [P] [US2] ファイルサイズ超過のエラー処理テストを tests/integration/test_error_file_too_large.py に作成
-- [ ] T027 [P] [US2] 破損ファイルのエラー処理テストを tests/integration/test_error_corrupted_file.py に作成
+- [X] T025 [P] [US2] 無効なファイル形式のエラー処理テストを tests/integration/test_error_invalid_format.py に作成
+- [X] T026 [P] [US2] ファイルサイズ超過のエラー処理テストを tests/integration/test_error_file_too_large.py に作成
+- [X] T027 [P] [US2] 破損ファイルのエラー処理テストを tests/integration/test_error_corrupted_file.py に作成
 
 ### ユーザーストーリー 2 の実装
 
-- [ ] T028 [P] [US2] ErrorResponse モデルと ErrorType 列挙型を src/models/errors.py に作成（Pydantic、型ヒント付き）
-- [ ] T029 [US2] カスタム例外クラス（InvalidFileFormat、FileTooLarge、CorruptedFile、ConversionFailed）を src/lib/exceptions.py に実装（型ヒント付き）
-- [ ] T030 [US2] グローバル例外ハンドラーを src/api/middleware/error_handler.py に実装（T028-T029 に依存、型ヒント付き）
-- [ ] T031 [US2] ファイル検証でのエラー処理を src/lib/validation.py に追加（適切な例外を発生させる）
-- [ ] T032 [US2] Excel 解析でのエラー処理を src/services/converter/excel_parser.py に追加（破損ファイルを検出）
-- [ ] T033 [US2] PDF 生成でのエラー処理を src/services/converter/pdf_generator.py に追加（変換失敗を処理）
-- [ ] T034 [US2] エラーハンドラーを src/main.py の FastAPI アプリに登録
-- [ ] T035 [US2] ユーザーストーリー 2 のすべてのコードに mypy 型チェックを実行
+- [X] T028 [P] [US2] ErrorResponse モデルと ErrorType 列挙型を src/models/errors.py に作成（Pydantic、型ヒント付き）
+- [X] T029 [US2] カスタム例外クラス（InvalidFileFormat、FileTooLarge、CorruptedFile、ConversionFailed）を src/lib/exceptions.py に実装（型ヒント付き）
+- [X] T030 [US2] グローバル例外ハンドラーを src/api/middleware/error_handler.py に実装（T028-T029 に依存、型ヒント付き）
+- [X] T031 [US2] ファイル検証でのエラー処理を src/lib/validation.py に追加（適切な例外を発生させる）
+- [X] T032 [US2] Excel 解析でのエラー処理を src/services/converter/excel_parser.py に追加（破損ファイルを検出）
+- [X] T033 [US2] PDF 生成でのエラー処理を src/services/converter/pdf_generator.py に追加（変換失敗を処理）
+- [X] T034 [US2] エラーハンドラーを src/main.py の FastAPI アプリに登録
+- [X] T035 [US2] ユーザーストーリー 2 のすべてのコードに mypy 型チェックを実行
 
 **チェックポイント**: この時点で、ユーザーストーリー 1 と 2 の両方が独立して機能するべきです
 

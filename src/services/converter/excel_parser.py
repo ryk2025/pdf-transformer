@@ -17,24 +17,9 @@ from src.lib.exceptions import CorruptedFile, ConversionFailed
 from src.lib.logging import get_logger
 from src.models import FileFormat
 from src.models.excel import ExcelCell, ExcelSheet, ExcelWorkbook
+from src.services.converter.color_utils import get_color_from_color_object, hex_to_rgb
 
 logger = get_logger(__name__)
-
-
-def _hex_to_rgb(hex_color: str | None) -> str:
-    """Convert hex color to RGB hex string."""
-    if not hex_color:
-        return "000000"
-
-    # Remove alpha channel if present (ARGB -> RGB)
-    if len(hex_color) == 8:
-        hex_color = hex_color[2:]
-
-    # Ensure 6 characters
-    if len(hex_color) != 6:
-        return "000000"
-
-    return hex_color
 
 
 def _parse_xlsx_cell(cell: OpenpyxlCell, row_idx: int, col_idx: int) -> ExcelCell:
@@ -62,13 +47,17 @@ def _parse_xlsx_cell(cell: OpenpyxlCell, row_idx: int, col_idx: int) -> ExcelCel
     # Get font color
     font_color = "000000"
     if font.color and font.color.rgb:
-        font_color = _hex_to_rgb(str(font.color.rgb))
+        font_color = hex_to_rgb(str(font.color.rgb))
 
     # Get background color
     bg_color = None
-    if cell.fill and isinstance(cell.fill, PatternFill):
-        if cell.fill.start_color and cell.fill.start_color.rgb:
-            bg_color = _hex_to_rgb(str(cell.fill.start_color.rgb))
+    if cell.fill and hasattr(cell.fill, "patternType") and cell.fill.patternType:
+        color_attr = None
+        if hasattr(cell.fill, "fgColor") and cell.fill.fgColor:
+            color_attr = cell.fill.fgColor
+        elif hasattr(cell.fill, "start_color") and cell.fill.start_color:
+            color_attr = cell.fill.start_color
+        bg_color = get_color_from_color_object(color_attr)
 
     # Get alignment
     alignment = cell.alignment if cell.alignment else Alignment()
@@ -80,6 +69,9 @@ def _parse_xlsx_cell(cell: OpenpyxlCell, row_idx: int, col_idx: int) -> ExcelCel
     text_rotation = 0
     if alignment.textRotation:
         text_rotation = alignment.textRotation
+
+    # Get number format
+    number_format = cell.number_format if cell.number_format else "General"
 
     # Check for borders and capture individual side styles
     has_border = False
@@ -145,6 +137,7 @@ def _parse_xlsx_cell(cell: OpenpyxlCell, row_idx: int, col_idx: int) -> ExcelCel
         border_right=border_right,
         border_top=border_top,
         border_bottom=border_bottom,
+        number_format=number_format,
     )
 
 
