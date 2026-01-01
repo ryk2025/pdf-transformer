@@ -57,6 +57,9 @@ class ExcelCell:
     wrap_text: bool = False  # Whether text should wrap within the cell
     row_span: int = 1  # Number of rows this cell spans (for merged cells)
     col_span: int = 1  # Number of columns this cell spans (for merged cells)
+    number_format: str = (
+        "General"  # Excel number format code (e.g., 'd', 'yyyy-mm-dd', '0.00')
+    )
 
 
 @dataclass
