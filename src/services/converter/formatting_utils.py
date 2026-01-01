@@ -73,12 +73,15 @@ def calculate_column_widths(
     if not sheet.column_widths:
         return [64.0] * num_columns
 
+    # Minimum column width to ensure text visibility
+    MIN_COLUMN_WIDTH = 5.0
+
     widths = []
     for col_idx in range(num_columns):
         width = sheet.column_widths.get(col_idx, 8.43)
 
         # Normalize narrow columns
-        if width < 5.0:
+        if width < MIN_COLUMN_WIDTH:
             prev_width = (
                 sheet.column_widths.get(col_idx - 1, 8.43) if col_idx > 0 else 8.43
             )
@@ -87,10 +90,13 @@ def calculate_column_widths(
                 if col_idx < num_columns - 1
                 else 8.43
             )
-            width = (
-                max(prev_width, next_width)
-                if max(prev_width, next_width) >= 5.0
-                else 8.43
+            width = max(
+                MIN_COLUMN_WIDTH,
+                (
+                    max(prev_width, next_width)
+                    if max(prev_width, next_width) >= MIN_COLUMN_WIDTH
+                    else 8.43
+                ),
             )
 
         widths.append(width * unit_to_points)
@@ -98,16 +104,14 @@ def calculate_column_widths(
     return widths
 
 
-def calculate_row_heights(
-    sheet, num_rows: int, min_height: float = 12.0
-) -> list[float]:
+def calculate_row_heights(sheet, num_rows: int, min_height: float = 7.0) -> list[float]:
     """
     Calculate row heights for PDF table based on Excel row heights.
 
     Args:
         sheet: Excel sheet with row height information
         num_rows: Number of rows in the table
-        min_height: Minimum row height in points
+        min_height: Minimum row height in points (default: 7.0 for readable text)
 
     Returns:
         List of row heights in points

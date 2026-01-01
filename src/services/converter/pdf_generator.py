@@ -7,6 +7,7 @@ This module handles generating PDF files from Excel data structures.
 from io import BytesIO
 from pathlib import Path
 from typing import Any
+from collections import defaultdict
 
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
@@ -41,8 +42,9 @@ EXCEL_UNIT_TO_POINTS = 1.8
 try:
     pdfmetrics.registerFont(UnicodeCIDFont("HeiseiMin-W3"))
     pdfmetrics.registerFont(UnicodeCIDFont("HeiseiKakuGo-W5"))
-    
+
     from reportlab.lib.fonts import addMapping
+
     addMapping("HeiseiMin-W3", 0, 0, "HeiseiMin-W3")
     addMapping("HeiseiMin-W3", 1, 0, "HeiseiKakuGo-W5")
     addMapping("HeiseiMin-W3", 0, 1, "HeiseiMin-W3")
@@ -78,7 +80,9 @@ class PDFGenerator:
         logger.info(f"Generating PDF from {len(workbook.sheets)} sheet(s)")
         pdf_bytes = self.generate_to_bytes(workbook)
         output_path.write_bytes(pdf_bytes)
-        logger.info(f"Successfully wrote PDF: {output_path.name} ({len(pdf_bytes)} bytes)")
+        logger.info(
+            f"Successfully wrote PDF: {output_path.name} ({len(pdf_bytes)} bytes)"
+        )
 
     def generate_to_bytes(self, workbook: ExcelWorkbook) -> bytes:
         """
@@ -118,15 +122,90 @@ class PDFGenerator:
 
                     # Calculate dimensions
                     num_columns = len(table_data[0]) if table_data else 0
-                    col_widths = calculate_column_widths(sheet, num_columns, EXCEL_UNIT_TO_POINTS)
+                    col_widths = calculate_column_widths(
+                        sheet, num_columns, EXCEL_UNIT_TO_POINTS
+                    )
                     base_row_heights = calculate_row_heights(sheet, len(table_data))
 
                     # Calculate scale to fit page
+                    # We need to find a scale where:
+                    # - width: sum(col_widths) * scale <= page_width
+                    # - height: sum([max(h * scale, MIN_ROW_HEIGHT)]) <= page_height
+                    MIN_ROW_HEIGHT = 7.0
+
                     total_width = sum(col_widths)
                     total_height = sum(base_row_heights)
-                    
+
                     width_scale = page_width / total_width if total_width > 0 else 1.0
-                    height_scale = page_height / total_height if total_height > 0 else 1.0
+
+                    # For height, consider MIN_ROW_HEIGHT and add small extra space
+                    # for rows that contain wrapped cells to avoid border contact
+                    rows_with_wrap = {r for (r, _c) in cells_with_wrap}
+                    # Identify rows that contain explicit line breaks (multi-line list items)
+                    multiline_rows: set[int] = set()
+                    # Track max explicit line count per row for conservative height adjustments
+                    row_line_counts: dict[int, int] = defaultdict(int)
+                    try:
+                        for c in sheet.cells:
+                            if (
+                                0 <= c.row < sheet.max_row
+                                and 0 <= c.column < sheet.max_column
+                            ):
+                                if isinstance(c.value, str):
+                                    vstrip = c.value.strip()
+                                    if "\n" in c.value:
+                                        multiline_rows.add(c.row)
+                                        # Count explicit lines for height estimation (ignore empty lines)
+                                        lines = [
+                                            ln
+                                            for ln in c.value.strip("\n").split("\n")
+                                            if ln.strip() != ""
+                                        ]
+                                        if lines:
+                                            row_line_counts[c.row] = max(
+                                                row_line_counts[c.row], len(lines)
+                                            )
+                                    # No font-size based inflation here to avoid overestimation
+                    except Exception:
+                        pass
+                    # Identify rows immediately preceding a multi-line row to avoid pre-list gap
+                    pre_multiline_rows: set[int] = set(
+                        r for r in range(sheet.max_row) if (r + 1) in multiline_rows
+                    )
+
+                    def calc_scaled_height(s: float) -> float:
+                        total = 0.0
+                        for r, h in enumerate(base_row_heights):
+                            # add extra space for wrapped rows, but exclude multi-line rows and the row before them to avoid pre-list gap
+                            extra = (
+                                2.0
+                                if (
+                                    r in rows_with_wrap
+                                    and r not in multiline_rows
+                                    and r not in pre_multiline_rows
+                                )
+                                else 0.0
+                            )
+                            total += max(h * s, MIN_ROW_HEIGHT) + extra
+                        return total
+
+                    # Binary search for optimal scale considering MIN_ROW_HEIGHT
+                    low, high = 0.1, 1.0
+                    height_scale = high
+
+                    for _ in range(50):
+                        mid = (low + high) / 2
+                        scaled_height = calc_scaled_height(mid)
+
+                        if scaled_height <= page_height:
+                            height_scale = mid
+                            low = mid
+                        else:
+                            high = mid
+
+                        if abs(scaled_height - page_height) < 1.0:
+                            break
+
                     scale = min(width_scale, height_scale, 1.0)
 
                     logger.info(
@@ -136,13 +215,42 @@ class PDFGenerator:
                     )
 
                     # Process wrapped cells
+                    # Normalize wrapped cells and bullet cells for consistent spacing and alignment
                     self._process_wrapped_cells(
                         table_data, cells_with_wrap, sheet, scale
                     )
+                    # Also normalize multi-line cells even if not wrapped
+                    try:
+                        multiline_cells: set[tuple[int, int]] = set(
+                            (
+                                c.row,
+                                c.column,
+                            )
+                            for c in sheet.cells
+                            if isinstance(getattr(c, "value", None), str)
+                            and ("\n" in getattr(c, "value"))
+                        )
+                    except Exception:
+                        multiline_cells = set()
+                    if multiline_cells:
+                        self._process_wrapped_cells(
+                            table_data, multiline_cells, sheet, scale
+                        )
 
                     # Create table with scaled dimensions
                     scaled_col_widths = [w * scale for w in col_widths]
-                    row_heights = [max(h * scale + 3, 12) for h in base_row_heights]
+                    row_heights = []
+                    for r, h in enumerate(base_row_heights):
+                        extra = (
+                            2.0
+                            if (
+                                r in rows_with_wrap
+                                and r not in multiline_rows
+                                and r not in pre_multiline_rows
+                            )
+                            else 0.0
+                        )
+                        row_heights.append(max(h * scale, MIN_ROW_HEIGHT) + extra)
 
                     table = Table(
                         table_data,
@@ -160,6 +268,7 @@ class PDFGenerator:
                     story.append(table)
                 else:
                     from reportlab.lib.styles import getSampleStyleSheet
+
                     styles = getSampleStyleSheet()
                     story.append(Paragraph("<i>Empty sheet</i>", styles["Normal"]))
 
@@ -178,14 +287,15 @@ class PDFGenerator:
             logger.error(f"PDF generation failed: {e}")
             raise ConversionFailed(f"Failed to generate PDF: {str(e)}")
 
-    def _process_wrapped_cells(
-        self, table_data, cells_with_wrap, sheet, scale
-    ) -> None:
+    def _process_wrapped_cells(self, table_data, cells_with_wrap, sheet, scale) -> None:
         """Process cells that need text wrapping."""
         for row, col in cells_with_wrap:
             if row < len(table_data) and col < len(table_data[row]):
                 cell_value = table_data[row][col]
                 if not cell_value:
+                    continue
+                # If already processed into a Paragraph (e.g., from a previous pass), skip
+                if isinstance(cell_value, Paragraph):
                     continue
 
                 # Get cell object for styling
@@ -194,11 +304,11 @@ class PDFGenerator:
                     None,
                 )
 
-                # Calculate font size
-                base_font_size = (
-                    max(6, cell_obj.font_size - 2) if cell_obj and cell_obj.font_size else 8
-                )
-                font_size = max(3, base_font_size * scale)
+                # Calculate font size: scale with table scale for consistency
+                if cell_obj and cell_obj.font_size:
+                    font_size = max(6.0, float(cell_obj.font_size) * scale)
+                else:
+                    font_size = max(6.0, 10.0 * scale)
 
                 # Determine alignment
                 alignment = TA_LEFT
@@ -208,15 +318,47 @@ class PDFGenerator:
                     elif cell_obj.alignment_horizontal == "right":
                         alignment = TA_RIGHT
 
-                # Create paragraph
-                cell_value_html = cell_value.replace("\n", "<br/>")
+                # Create paragraph with controlled spacing
+                # - Strip leading/trailing newlines to avoid accidental blank lines
+                # - Collapse multiple <br/> sequences
+                # - Normalize bullet lines (remove leading ideographic/ASCII spaces)
+                # - Reduce leading to tighten inter-line spacing
+                import re
+
+                cell_value_stripped = cell_value.strip("\n")
+                # Normalize bullet lines: trim leading spaces so bullets align
+                lines = cell_value_stripped.split("\n")
+                norm_lines = []
+                for ln in lines:
+                    # remove leading ASCII spaces and full-width spaces
+                    ln2 = re.sub(r"^[ \u3000]+", "", ln)
+                    norm_lines.append(ln2)
+                cell_value_html = "<br/>".join(norm_lines)
+                # Collapse consecutive <br/> to a single one
+                cell_value_html = re.sub(
+                    r"(?:<br\s*/?>\s*){2,}", "<br/>", cell_value_html
+                )
+                # Remove any leading/trailing <br/>
+                cell_value_html = re.sub(r"^(?:<br\s*/?>\s*)+", "", cell_value_html)
+                cell_value_html = re.sub(r"(?:<br\s*/?>\s*)+$", "", cell_value_html)
+
                 para_style = ParagraphStyle(
                     "CellStyle",
                     fontName=JAPANESE_FONT,
                     fontSize=font_size,
-                    leading=font_size * 1.5,
+                    leading=max(font_size * 1.15, font_size + 1),
                     alignment=alignment,
+                    spaceBefore=0,
+                    spaceAfter=0,
+                    firstLineIndent=0,
+                    leftIndent=0,
                 )
+                # Improve CJK wrapping when available
+                try:
+                    setattr(para_style, "wordWrap", "CJK")
+                except Exception:
+                    pass
+
                 table_data[row][col] = Paragraph(cell_value_html, para_style)
 
 

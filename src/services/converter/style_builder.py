@@ -56,6 +56,11 @@ class TableStyleBuilder:
             ("ALIGN", (0, 0), (-1, -1), "LEFT"),
             ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
             ("BACKGROUND", (0, 0), (-1, -1), colors.white),
+            # Add cell padding to prevent text from touching borders
+            ("LEFTPADDING", (0, 0), (-1, -1), 2),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 2),
+            ("TOPPADDING", (0, 0), (-1, -1), 4),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
         ]
 
         # Add span commands
@@ -93,10 +98,13 @@ class TableStyleBuilder:
                         ("FONTNAME", start_pos, end_pos, self.japanese_font_bold)
                     )
 
-                # Font size (scaled and adjusted)
+                # Font size: scale with table scale for visual consistency
                 if cell.font_size:
-                    adjusted_size = max(6, int((cell.font_size - 2) * scale))
-                    commands.append(("FONTSIZE", start_pos, end_pos, adjusted_size))
+                    try:
+                        scaled_size = max(6, int(round(float(cell.font_size) * scale)))
+                    except Exception:
+                        scaled_size = max(6, int(round(10 * scale)))
+                    commands.append(("FONTSIZE", start_pos, end_pos, scaled_size))
 
                 # Font color
                 if cell.font_color:
@@ -127,6 +135,23 @@ class TableStyleBuilder:
                     }
                     valignment = valign_map.get(cell.alignment_vertical, "TOP")
                     commands.append(("VALIGN", start_pos, end_pos, valignment))
+
+                # Reduce top padding for bullet list items to avoid a blank line before content
+                try:
+                    val = (
+                        str(cell.value)
+                        if getattr(cell, "value", None) is not None
+                        else None
+                    )
+                except Exception:
+                    val = None
+
+                if isinstance(val, str):
+                    vstrip = val.strip()
+                    # For multi-line list items, set small top padding and stick content to the top
+                    if "\n" in val:
+                        commands.append(("TOPPADDING", start_pos, end_pos, 2))
+                        commands.append(("VALIGN", start_pos, end_pos, "TOP"))
 
 
 __all__ = ["TableStyleBuilder"]
